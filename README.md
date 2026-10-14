@@ -1,4 +1,4 @@
-# Legacy Game Server Modernization on AWS
+# AWS Runescape Project
 
 **Containerizing a legacy Java application, separating durable state from disposable compute, and operating it with infrastructure as code.**
 
