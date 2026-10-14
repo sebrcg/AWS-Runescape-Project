@@ -2,7 +2,7 @@
 
 aws_region        = "us-east-1"
 environment       = "prod"
-github_repository = "<owner>/<repo>"      # e.g. sebrcg/aws-game-server-lab
+github_repository = "<owner>/<repo>"      # e.g. sebrcg/AWS-Runescape-Project
 
 # OIDC sub-claim filter (appended after "repo:<owner>/<repo>:")
 #   "*"                  -> any ref in the repo (PRs, branches, tags)
