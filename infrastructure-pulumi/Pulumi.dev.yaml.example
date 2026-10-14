@@ -1,0 +1,27 @@
+config:
+  # --- AWS provider settings ---
+  aws:region: us-east-1
+  # Default tags applied to every resource the provider creates
+  # (mirrors the Terraform `provider "aws" { default_tags { ... } }` block).
+  aws:defaultTags:
+    tags:
+      Project: RSPS-Server
+      ManagedBy: Pulumi
+      Environment: prod
+  # --- Application config (mirrors the .tfvars across the 4 TF stacks) ---
+  rsps-ecs:environment: prod
+  rsps-ecs:clusterName: rsps-cluster
+  rsps-ecs:repositoryName: rsps-server
+  rsps-ecs:vpcCidr: 10.0.0.0/16
+  rsps-ecs:logRetentionDays: "7"
+  rsps-ecs:taskFamily: rsps-server
+  rsps-ecs:serviceName: rsps-service
+  rsps-ecs:cpu: "1024" # 1 vCPU
+  rsps-ecs:memory: "2048" # 2 GB RAM
+  rsps-ecs:gamePort: "43594"
+  rsps-ecs:js5Port: "43595"
+  rsps-ecs:desiredCount: "0"
+  rsps-ecs:assignPublicIp: "true"
+  # NAT Gateway off by default to save ~$32/mo; private subnets then route to
+  # the IGW and tasks need a public IP (assignPublicIp above).
+  rsps-ecs:enableNatGateway: "false"

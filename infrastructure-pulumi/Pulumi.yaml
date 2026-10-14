@@ -1,0 +1,9 @@
+name: rsps-ecs
+runtime:
+  name: python
+  options:
+    virtualenv: venv
+description: >-
+  Pulumi (Python) port of the Terraform ECS Fargate stack for the RSPS server.
+  Mirrors infrastructure/{ecr,ecs-cluster,ecs-task-definition,ecs-service} as a
+  single program using real typed references instead of tag-based data lookups.

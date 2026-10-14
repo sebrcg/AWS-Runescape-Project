@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars and adjust if your names differ.
+
+aws_region   = "us-east-1"
+cluster_name = "rsps-cluster"
+environment  = "prod"

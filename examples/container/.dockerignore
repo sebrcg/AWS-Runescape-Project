@@ -1,0 +1,31 @@
+# Ignore dynamic data files when building image
+data/players/
+data/logs/
+data/backups/
+data/configuration.txt
+data/daily_skill_bonus.txt
+data/sql.txt
+data/starters.txt
+data/punishments.json
+data/random_event_questions.txt
+
+# Ignore build artifacts
+build/
+.gradle/
+*.class
+
+# Ignore git and IDE files
+.git/
+.gitignore
+.idea/
+*.iml
+.vscode/
+
+# Ignore documentation
+*.md
+DEMO_SCRIPT.md
+DOCKER_SETUP.md
+TICKET_SUMMARY.md
+
+# Ignore other non-essential files
+info/

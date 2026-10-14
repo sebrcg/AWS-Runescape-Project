@@ -1,0 +1,18 @@
+# Local credentials, configuration, and state
+.env
+.env.*
+*.pem
+*.key
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+Pulumi.*.yaml
+!Pulumi.*.yaml.example
+**/venv/
+**/.venv/
+**/__pycache__/
+*.pyc
+.DS_Store

@@ -1,0 +1,59 @@
+name: Pulumi Preview
+
+# Runs `pulumi preview` on every PR that touches the Pulumi program and posts
+# the plan as a PR comment. Preview only — it never creates/changes resources.
+
+on:
+  pull_request:
+    paths:
+      - "infrastructure-pulumi/**"
+      - ".github/workflows/pulumi-preview.yml"
+
+# Least privilege: read the repo, write PR comments, and request an OIDC token
+# (id-token) so we can assume the AWS role without storing access keys.
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: infrastructure-pulumi
+        run: |
+          python -m venv venv
+          ./venv/bin/python -m pip install --upgrade pip
+          ./venv/bin/python -m pip install -r requirements.txt
+
+      # AWS credentials via GitHub OIDC — no long-lived keys. The action
+      # exchanges the workflow's OIDC token for temporary STS credentials by
+      # assuming the role below, whose trust policy is scoped to this repo.
+      # Role is defined in infrastructure/github-oidc (Terraform).
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_PREVIEW_ROLE_ARN }}
+
+      - name: Pulumi preview
+        uses: pulumi/actions@v5
+        with:
+          command: preview
+          stack-name: dev
+          work-dir: infrastructure-pulumi
+          # Self-managed S3 state backend (created by bootstrap-state-backend).
+          cloud-url: ${{ vars.PULUMI_STATE_URL }}
+          comment-on-pr: true
+        env:
+          # Passphrase that unlocks the stack's secrets provider.
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}

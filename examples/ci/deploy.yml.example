@@ -1,0 +1,73 @@
+name: Deploy to ECS
+
+# Manual trigger — click "Run workflow" in the Actions tab. The `service` input
+# chooses which ECS service to roll onto the freshly built image.
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "ECS service to roll onto the new image"
+        required: true
+        default: "rsps-service"
+
+# Required for keyless auth: the job must be allowed to request an OIDC token.
+permissions:
+  id-token: write   # mint the OIDC token used to assume the AWS role
+  contents: read    # check out the repo
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: rsps-server
+  ECS_CLUSTER: rsps-cluster
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      # No stored AWS keys: GitHub mints a short-lived OIDC token and trades it
+      # for temporary credentials by assuming the role. The role ARN lives in a
+      # repo secret so the account id stays out of version control.
+      - name: Configure AWS credentials (keyless via OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # The ~246 MB game cache is too big for git, so it lives in S3. Pull and
+      # unpack it into data/cache before building — the Dockerfile copies it in.
+      - name: Fetch game cache from S3
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          aws s3 cp "s3://rsps-build-assets-${ACCOUNT_ID}/cache.tar.gz" cache.tar.gz
+          tar -xzf cache.tar.gz -C data
+          echo "Cache ready:"; ls data/cache | head
+
+      # Tag with the commit SHA (immutable + traceable) AND latest (what the task
+      # definition points at, so a force-new-deployment picks it up).
+      - name: Build and push the image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            -t "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            -t "$REGISTRY/$ECR_REPOSITORY:latest" .
+          docker push "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker push "$REGISTRY/$ECR_REPOSITORY:latest"
+
+      # Tell ECS to start a fresh deployment; it pulls the new :latest image.
+      - name: Deploy — roll the ECS service onto the new image
+        run: |
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "${{ github.event.inputs.service }}" \
+            --force-new-deployment \
+            --region "$AWS_REGION"
+          echo "Rolled '${{ github.event.inputs.service }}' onto the new image."

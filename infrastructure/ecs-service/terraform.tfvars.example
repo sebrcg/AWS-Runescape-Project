@@ -1,0 +1,12 @@
+# Example Terraform variables for ECS Service
+# Copy this to terraform.tfvars and customize
+
+aws_region             = "us-east-1"
+environment            = "prod"
+cluster_name           = "rsps-cluster"
+service_name           = "rsps-service"
+task_definition_family = "rsps-server"
+
+# Service configuration
+desired_count    = 0     # Number of containers to run
+assign_public_ip = true  # true for direct access, false if using ALB
