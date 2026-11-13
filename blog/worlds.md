@@ -63,7 +63,7 @@ The infrastructure is the same idea one altitude up. I wrote a `world` **module*
 flowchart LR
     V["var.worlds<br/>{ world1 = {id=1}<br/>world2 = {id=2} }"] -->|for_each| M
 
-    subgraph M["module &quot;world&quot; (written once)"]
+    subgraph M["world module (written once)"]
         AP[EFS access point<br/>root = /worldN]
         LG[CloudWatch log group]
         TD[ECS task definition<br/>WORLD_ID = N]
