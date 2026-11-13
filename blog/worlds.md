@@ -59,7 +59,12 @@ This section records the original four-resource module. The current [world modul
 
 The infrastructure is the same idea one altitude up. I wrote a `world` **module**, a reusable bundle of resources that describes *everything one world needs*, then stamped it out with `for_each`.
 
-```mermaid
+![Independent world resources created by a reusable Terraform module](screenshots/world-module.svg)
+
+<details>
+<summary>Mermaid diagram source</summary>
+
+```text
 flowchart LR
     V["var.worlds<br/>{ world1 = {id=1}<br/>world2 = {id=2} }"] -->|for_each| M
 
@@ -73,6 +78,8 @@ flowchart LR
     M --> W1["world1: 4 resources"]
     M --> W2["world2: 4 resources"]
 ```
+
+</details>
 
 Adding `world3 = { id = 3 }` is a **one line change**. `for_each` builds the other four
 resources for it automatically. I watched the plan go from `8 to add` to `12 to add` and back to `8` by editing that single line.
@@ -112,13 +119,20 @@ Part 1 ended on a real problem: **every time a Fargate task restarts, it gets a 
 
 **Why a Network Load Balancer, not an Application one?** An ALB is Layer 7. It speaks HTTP and routes by URL. My game speaks a **raw binary TCP protocol**, so there's nothing for an ALB to route on. An **NLB is Layer 4**. It just forwards TCP. Right tool.
 
-```mermaid
+![Stable per-world NLB endpoint forwarding traffic to a Fargate task](screenshots/world-network.svg)
+
+<details>
+<summary>Mermaid diagram source</summary>
+
+```text
 flowchart TD
     C["Player's client<br/>world1-abc.elb.amazonaws.com : 43594"] --> NLB
     NLB["NLB (stable DNS name)<br/>in public subnets"] --> L["Listener :43594<br/>forward →"]
     L --> TG["Target group<br/>(live task IPs)"]
     TG --> T["Fargate task<br/>rsps-server : 43594"]
 ```
+
+</details>
 
 The key trick is **how the address stays fixed while tasks are disposable**. The ECS service's `load_balancer` block makes **ECS automatically register and deregister each task's IP in the target group** as tasks start and stop. The NLB just reads that target group, so it always points at a live task. The DNS name never changes.
 
